@@ -1,0 +1,44 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+
+html,
+body {
+    overflow: hidden;
+}
+
+.viewer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    outline: none;
+}
+
+.sphereIdDisplay {
+
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    top: 200px;
+    left: 1100px;
+    color: white;
+    font-size: 22px;
+    pointer-events: none;
+    box-shadow: 0 10px 20px 0 rgba(0, 0, 0, 0.2), 0 10px 20px 0 rgba(0, 0, 0, 0.19);
+    text-align: center;
+}
+
+.compass {
+    width: auto;
+    height: auto;
+    position: absolute;
+    background-size: cover;
+    transform-origin: center center;
+    transition: transform 0.5s ease;
+}
+
+span {
+    display: grid;
+}
