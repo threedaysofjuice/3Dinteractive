@@ -21,8 +21,8 @@ body {
     position: absolute;
     background-color: rgba(0, 0, 0, 0.7);
     border-radius: 5px;
-    top: 200px;
-    left: 1100px;
+    top: 500px;
+    left: 1200px;
     color: white;
     font-size: 22px;
     pointer-events: none;
@@ -41,4 +41,10 @@ body {
 
 span {
     display: grid;
+}
+
+.floorimage:hover {
+
+    opacity: 0.8;
+    border: 2px solid red;
 }

@@ -3,11 +3,12 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import { GLTF, GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { Pane } from 'tweakpane';
 import { glbFiles } from './floorassets';
-import { floorImages } from './floorassets';
+import { VertFloors } from './floorassets';
 import { BoxGeometry } from "three";
 import * as TWEEN from '@tweenjs/tween.js';
 import { InteractionManager } from 'three.interactive';
 import { createElement } from "react";
+
 
 class ThreeDViewer {
 
@@ -16,7 +17,8 @@ class ThreeDViewer {
     private camera: THREE.PerspectiveCamera;
     private sizes: { width: number, height: number };
     private controls: OrbitControls;
-    private spheres: THREE.Mesh[] = [];
+    private floors: THREE.Mesh[] = [];
+    private vertfloors: THREE.Mesh[] = [];
     private raycaster: THREE.Raycaster;
     private mouse: THREE.Vector2;
     private sphereIdDisplay: HTMLElement | null = null;
@@ -57,7 +59,9 @@ class ThreeDViewer {
          * Initialize Camera
          */
         this.camera = new THREE.PerspectiveCamera(75, this.sizes.width / this.sizes.height, 0.1, 1000);
-
+        this.camera.layers.enable(0);
+        this.camera.layers.enable(1);
+        this.camera.layers.enable(2);
         /**
          * Add Orbit Controls
          */
@@ -86,21 +90,6 @@ class ThreeDViewer {
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
 
-
-
-        // const monkeyUrls = new URL('../models/test5.glb', import.meta.url);
-
-        // const monkeyUrles = new GLTFLoader();
-        // monkeyUrles.load(monkeyUrls.href, (gltf) => {
-        //     const add = gltf.scene;
-        //     this.scene.add(add);
-        //     add.position.set(0, 0, 0);
-        //     this.fitToView();
-        // })
-
-
-
-
         const compassElement = document.createElement("div");
         compassElement.id = "compass";
         compassElement.className = "compass";
@@ -108,6 +97,8 @@ class ThreeDViewer {
         const grid = new THREE.GridHelper(200, 20, 0x000000, 0x000000);
         grid.material.opacity = 0.3;
         grid.material.transparent = true;
+
+
         const loadedModels: THREE.Object3D[] = [];
         const loader = new GLTFLoader();
         const loadModels = async () => {
@@ -142,21 +133,39 @@ class ThreeDViewer {
         for (let i = 0; i < 20; i++) {
             const sphereGeometry = new THREE.BoxGeometry(6, 1, 6);
             const sphereMaterial = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.05 });
-            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            const floor = new THREE.Mesh(sphereGeometry, sphereMaterial);
 
-            sphere.position.set(0, i * 1.25, 0);
+            floor.position.set(0, i * 1.25, 0);
 
             // unique ID to each sphere
-            sphere.userData = {
+            floor.userData = {
                 id: i + 1,
-                imageURL: floorImages[i],
+                glbURL: VertFloors[i],
             };
 
-            this.scene.add(sphere);
-            this.spheres.push(sphere);
+            this.scene.add(floor);
+            this.floors.push(floor);
 
         }
 
+
+        for (let i = 0; i < 20; i++) {
+            const sphereGeometry = new THREE.BoxGeometry(6, 3, 3);
+            const sphereMaterial = new THREE.MeshPhongMaterial({ transparent: true, opacity: 0 });
+            const vertfloor = new THREE.Mesh(sphereGeometry, sphereMaterial);
+
+            vertfloor.position.set(11.2, i * 1.3, 0);
+
+            // unique ID to each sphere
+            vertfloor.userData = {
+                id: i + 1,
+                glbURL: VertFloors[i],
+            };
+
+            this.scene.add(vertfloor);
+            this.vertfloors.push(vertfloor);
+
+        }
 
 
         this.renderer.domElement.addEventListener('click', this.onMouseClick.bind(this));
@@ -168,16 +177,33 @@ class ThreeDViewer {
 
             this.raycaster.setFromCamera(this.mouse, this.camera);
 
-            const intersects = this.raycaster.intersectObjects(this.spheres);
+            const intersects = this.raycaster.intersectObjects(this.floors);
+
 
             if (intersects.length > 0) {
                 const clickedObject = intersects[0].object as THREE.Group;
                 const floorId = clickedObject.userData.id;
 
+
                 if (floorId >= 1 && floorId <= 20) {
                     //  target and camera positions based on floorId
                     const targetPosition = new THREE.Vector3(0, floorId * 1.25, 0);
                     const cameraPosition = new THREE.Vector3(0, floorId * 1.25, 10);
+
+                    // Trigger 
+                    this.moveToNextScene(targetPosition, cameraPosition);
+                }
+
+
+            }
+            const intersects2 = this.raycaster.intersectObjects(this.vertfloors);
+            if (intersects2.length > 0) {
+                const clickedObject = intersects2[0].object as THREE.Group;
+                const vertfloors = clickedObject.userData.id;
+                if (vertfloors >= 1 && vertfloors <= 20) {
+                    //  target and camera positions based on floorId
+                    const targetPosition = new THREE.Vector3(10, vertfloors * 1.25, 0);
+                    const cameraPosition = new THREE.Vector3(10, vertfloors * 1.25, 10);
 
                     // Trigger 
                     this.moveToNextScene(targetPosition, cameraPosition);
@@ -255,7 +281,7 @@ class ThreeDViewer {
         const newTarget: THREE.Vector3 = targetPosition;
 
         //  position and target
-        const duration: number = 2000; // the duration (in milliseconds)
+        const duration: number = 1000; // the duration (in milliseconds)
 
         const positionTween: TWEEN.Tween<THREE.Vector3> = new TWEEN.Tween(this.camera.position).to(newPosition, duration)
             .easing(TWEEN.Easing.Sinusoidal.Out);
@@ -288,7 +314,7 @@ class ThreeDViewer {
 
         this.raycaster.setFromCamera(this.mouse, this.camera);
 
-        const intersects = this.raycaster.intersectObjects(this.spheres);
+        const intersects = this.raycaster.intersectObjects(this.floors);
 
         if (intersects.length > 0) {
             const clickedObject = intersects[0].object as THREE.Mesh;
@@ -296,54 +322,39 @@ class ThreeDViewer {
 
             (clickedObject.material as THREE.MeshPhongMaterial).color.setHex(0xffffff); // Red color
 
+
             if (this.sphereIdDisplay) {
-                // Clear the existing content of sphereIdDisplay
+
                 this.sphereIdDisplay.innerHTML = '';
+                const fixedPosition = new THREE.Vector3(3, 0, 0);
+                const glbURL = clickedObject.userData.glbURL;
+                const loader = new GLTFLoader();
 
-                // Get the image URL for this floor
-                const imageURL = clickedObject.userData.imageURL;
+                loader.load(glbURL, (gltf) => {
+                    const loadedObject = gltf.scene;
+                    loadedObject.position.copy(fixedPosition);
 
-                // Create an img element and set its source
-                const imgElement = document.createElement('img');
-                imgElement.src = imageURL;
-                imgElement.className = 'floor-image';
-                imgElement.alt = 'usemap';
 
-                const mapElement = document.createElement('map');
-                mapElement.name = 'floor-image';
 
-                // Create area elements for each office
-                const offices = [
-                    { alt: 'Office 1', title: 'Office 1', href: 'https://ru.pinterest.com/pin/10133167902221188/', coords: '55,218,53,178,73,182,71,139,34,137,32,168,17,169,16,219', shape: 'poly' },
-                    { alt: 'Office 2', title: 'Office 2', href: 'https://ru.pinterest.com/pin/10133167902221188/', coords: '246,117,248,89,264,90,266,40,222,40,221,78,206,79,207,117', shape: 'poly' },
-                    { alt: 'Office 3', title: 'Office 3', href: 'https://ru.pinterest.com/pin/10133167902221188/', coords: '109,74,109,32,84,31,83,17,38,16,38,59,70,59,70,74', shape: 'poly' },
-                ];
+                    this.scene.children.forEach((child) => {
+                        if (child.name === 'loadedObject' && child.userData.id !== glbURL) {
+                            this.scene.remove(child);
+                        }
+                    }); loadedObject.name = 'loadedObject';
+                    this.scene.add(loadedObject);
 
-                offices.forEach((office, index) => {
-                    const areaElement = document.createElement('area');
-                    areaElement.target = '_blank';
-                    areaElement.alt = office.alt;
-                    areaElement.title = office.title;
-                    areaElement.href = office.href;
-                    areaElement.coords = office.coords;
-                    areaElement.shape = office.shape;
-                    areaElement.addEventListener('click', () => {
-                        // Handle the click event for the specific office here
-                        console.log(`Clicked on ${office.title}`);
-                    });
-                    mapElement.appendChild(areaElement);
                 });
 
-                // Append the img element and map element to the sphereIdDisplay div
-                this.sphereIdDisplay.appendChild(imgElement);
-                this.sphereIdDisplay.appendChild(mapElement);
-                // Add text content (floor ID) after the image
+
+                // Add text content (floor ID) after the GLB object
                 const textElement = document.createElement('span');
                 textElement.textContent = `Floor ${sphereId} `;
                 this.sphereIdDisplay.appendChild(textElement);
             }
         }
     }
+
+
 
 
     resize(): void {
@@ -385,6 +396,7 @@ class ThreeDViewer {
         this.renderer.render(this.scene, this.camera);
         requestAnimationFrame(this.animate.bind(this));
         TWEEN.update();
+
     }
 }
 
