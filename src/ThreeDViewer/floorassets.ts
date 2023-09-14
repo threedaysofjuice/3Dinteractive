@@ -43,8 +43,8 @@ export const VertFloors = [
     'src/models/vertfloor16.glb',
     'src/models/vertfloor17.glb',
     'src/models/vertfloor18.glb',
-    'src/models/vertfloor18.glb',
-    'src/models/vertfloor18.glb',
+    'src/models/vertfloor19.glb',
+    'src/models/vertfloor20.glb',
 ];
 
 
